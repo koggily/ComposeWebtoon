@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">test</string>
+    <string name="home_recommend">추천</string>
+    <string name="home_special">스페셜</string>
+</resources>
