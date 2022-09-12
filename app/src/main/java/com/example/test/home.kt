@@ -5,14 +5,12 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.ScrollableState
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.TabPosition
 import androidx.compose.material.TabRow
@@ -20,7 +18,6 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -28,7 +25,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.constraintlayout.compose.ConstraintLayout
@@ -40,12 +36,11 @@ import com.example.test.model.SpecialWebtoonItem
 import com.example.test.ui.theme.TestTheme
 import com.google.accompanist.pager.*
 import dev.chrisbanes.snapper.ExperimentalSnapperApi
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalPagerApi::class)
 @Composable
-fun Home() {
+fun Home(viewModel: HomeTabViewModel) {
     val pagerState = rememberPagerState(initialPage = 0)
     val coroutineScope = rememberCoroutineScope()
     Column {
@@ -54,7 +49,7 @@ fun Home() {
                 pagerState.scrollToPage(it)
             }
         }, pagerState)
-        HomePager(pagerState)
+        HomePager(pagerState, viewModel)
     }
 }
 
@@ -88,7 +83,6 @@ fun HomeTabBar(
         )
     }
 }
-
 
 
 @OptIn(ExperimentalPagerApi::class)
@@ -159,21 +153,13 @@ fun HomeTabIndicator(
 
 @OptIn(ExperimentalPagerApi::class, ExperimentalSnapperApi::class)
 @Composable
-fun HomePager(pagerState: PagerState) {
-    println(pagerState)
-
-//    if(pagerState.currentPage == 0) {
-//        RecommendTab()
-//    } else {
-//        SpecialTab()
-//    }
-
+fun HomePager(pagerState: PagerState, viewModel: HomeTabViewModel) {
     HorizontalPager(
         count = 2, state = pagerState
     ) { page ->
         when (page) {
             0 -> RecommendTab()
-            else -> SpecialTab()
+            else -> SpecialTab(viewModel.specialWebtoonList, viewModel)
         }
     }
 
@@ -184,35 +170,23 @@ fun RecommendTab() {
     Text(text = "추천탭")
 }
 
-val specialWebtoonItem = listOf(
-    SpecialWebtoonItem("1", "1", "1"),
-    SpecialWebtoonItem("2", "2", "2"),
-    SpecialWebtoonItem("3", "3", "3"),
-    SpecialWebtoonItem("4", "4", "4"),
-)
-
-fun getMoreWebtoonItem() = listOf(
-    SpecialWebtoonItem("1", "1", "1"),
-    SpecialWebtoonItem("2", "2", "2"),
-    SpecialWebtoonItem("3", "3", "3"),
-    SpecialWebtoonItem("4", "4", "4"),
-)
-
 @Composable
-fun SpecialTab() {
+fun SpecialTab(list: List<SpecialWebtoonItem>, viewModel: HomeTabViewModel) {
     val listState = rememberLazyListState()
     LazyColumn(
         modifier = Modifier
             .background(Color.Black),
         state = listState
     ) {
-        items(specialWebtoonItem.size) {
-            SpecialItem(specialWebtoonItem[it])
+        items(
+            items = list
+        ) {
+            SpecialItem(it)
             Spacer(modifier = Modifier.height(10.dp))
         }
     }
-    listState.OnBottomReached {
-        getMoreWebtoonItem()
+    listState.OnBottomReached(buffer = 2) {
+        viewModel.loadMoreSpecialWebtoon()
     }
 }
 
@@ -280,7 +254,7 @@ fun ChipButtons(modifier: Modifier, data: List<String>) {
         )
     )
     val chipState = rememberLazyListState()
-    LazyRow(state = chipState,modifier = modifier) {
+    LazyRow(state = chipState, modifier = modifier) {
         items(data.size) {
             Text(
                 text = data[it], modifier = Modifier
@@ -297,22 +271,23 @@ fun ChipButtons(modifier: Modifier, data: List<String>) {
 
 @Composable
 fun LazyListState.OnBottomReached(
+    buffer: Int = 0,
     loadMore: () -> Unit
 ) {
+    require(buffer >= 0) { "buffer cannot be negative, but was $buffer" }
+
     val shouldLoadMore = remember {
         derivedStateOf {
             val lastVisibleItem = layoutInfo.visibleItemsInfo.lastOrNull()
-                ?:
-                return@derivedStateOf true
 
-            lastVisibleItem.index == layoutInfo.totalItemsCount
+            lastVisibleItem!!.index == layoutInfo.totalItemsCount - 1
         }
     }
 
     LaunchedEffect(shouldLoadMore) {
         snapshotFlow { shouldLoadMore.value }
             .collect {
-                if(it) loadMore
+                if (it) loadMore()
             }
     }
 }
@@ -326,8 +301,9 @@ fun SpecialBackground() {
 @Preview
 @Composable
 fun prevHome() {
+    val homeTabViewModel = HomeTabViewModel()
     TestTheme {
-        Home()
+        Home(homeTabViewModel)
     }
 }
 

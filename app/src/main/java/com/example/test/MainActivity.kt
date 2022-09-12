@@ -4,6 +4,7 @@ import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.spring
@@ -45,6 +46,7 @@ import dev.chrisbanes.snapper.ExperimentalSnapperApi
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
+    private val homeTabViewModel: HomeTabViewModel by viewModels()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -54,7 +56,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colors.background
                 ) {
-                    Home()
+                    Home(homeTabViewModel)
                 }
             }
         }
@@ -64,7 +66,8 @@ class MainActivity : ComponentActivity() {
 @Preview(showBackground = true)
 @Composable
 fun DefaultPreview() {
+    val homeTabViewModel = HomeTabViewModel()
     TestTheme {
-        Home()
+        Home(viewModel = homeTabViewModel)
     }
 }
