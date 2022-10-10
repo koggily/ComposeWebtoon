@@ -210,8 +210,11 @@ fun SpecialItem(item: SpecialWebtoonItem, listState: LazyListState) {
     val mPainter = rememberAsyncImagePainter(R.drawable.fight, imgLoader)
 
 
-    Box(modifier = Modifier.height(600.dp)
-        .clip(RoundedCornerShape(0.dp))) {
+    Box(
+        modifier = Modifier
+            .height(600.dp)
+            .clip(RoundedCornerShape(0.dp))
+    ) {
         Image(
             painter = mPainter,
             contentDescription = "Webtoon",
@@ -219,8 +222,7 @@ fun SpecialItem(item: SpecialWebtoonItem, listState: LazyListState) {
             modifier = Modifier
                 .zIndex(2.0f)
                 .fillMaxWidth()
-                .align(Alignment.BottomCenter)
-                ,
+                .align(Alignment.BottomCenter),
             contentScale = ContentScale.Crop
         )
         Image(
@@ -228,23 +230,51 @@ fun SpecialItem(item: SpecialWebtoonItem, listState: LazyListState) {
             contentDescription = "background",
             modifier = Modifier
                 .fillMaxWidth()
-                .offset( y= with(LocalDensity.current) {
-                    (listState.layoutInfo.visibleItemsInfo.firstOrNull()?.offset?.div(5))?.toDp()  ?: 0.dp
+                .offset(y = with(LocalDensity.current) {
+                    (listState.layoutInfo.visibleItemsInfo.firstOrNull()?.offset?.div(5))?.toDp()
+                        ?: 0.dp
                 }),
             contentScale = ContentScale.Crop
         )
-        ChipButtons(modifier = Modifier
-            .padding(bottom = 16.dp, start = 4.dp)
-            .zIndex(3.0f)
-            .align(Alignment.BottomCenter),
-            data = chipString)
+        ChipButtons(
+            modifier = Modifier
+                .padding(bottom = 16.dp, start = 4.dp)
+                .zIndex(3.0f)
+                .align(Alignment.BottomCenter),
+            data = chipString
+        )
 
     }
 
 
 }
 
-val chipString = listOf("꿀잼", "꿀맛", "개굴맨", "팡주팡머", "팡팡팡", "팡팡팡팡","꿀잼", "꿀맛", "개굴맨", "팡주팡머", "팡팡팡", "팡팡팡팡","꿀잼", "꿀맛", "개굴맨", "팡주팡머", "팡팡팡", "팡팡팡팡","꿀잼", "꿀맛", "개굴맨", "팡주팡머", "팡팡팡", "팡팡팡팡")
+val chipString = listOf(
+    "꿀잼",
+    "꿀맛",
+    "개굴맨",
+    "팡주팡머",
+    "팡팡팡",
+    "팡팡팡팡",
+    "꿀잼",
+    "꿀맛",
+    "개굴맨",
+    "팡주팡머",
+    "팡팡팡",
+    "팡팡팡팡",
+    "꿀잼",
+    "꿀맛",
+    "개굴맨",
+    "팡주팡머",
+    "팡팡팡",
+    "팡팡팡팡",
+    "꿀잼",
+    "꿀맛",
+    "개굴맨",
+    "팡주팡머",
+    "팡팡팡",
+    "팡팡팡팡"
+)
 
 @Composable
 fun ChipButtons(modifier: Modifier, data: List<String>) {
@@ -276,7 +306,7 @@ fun ChipButtons(modifier: Modifier, data: List<String>) {
     }
     LaunchedEffect(c) {
         println(chipState.layoutInfo.viewportEndOffset)
-        if(c != 80) chipState.animateScrollToItem(c)
+        if (c != 80) chipState.animateScrollToItem(c)
     }
     LazyRow(state = chipState, modifier = modifier) {
         items(data.size) {
