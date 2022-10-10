@@ -245,7 +245,7 @@ fun SpecialItem(item: SpecialWebtoonItem, listState: LazyListState) {
         )
 
     }
-
+    print("TEST")
 
 }
 
