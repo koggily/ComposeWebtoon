@@ -243,9 +243,7 @@ fun SpecialItem(item: SpecialWebtoonItem, listState: LazyListState) {
                 .align(Alignment.BottomCenter),
             data = chipString
         )
-
     }
-    print("TEST")
 
 }
 
