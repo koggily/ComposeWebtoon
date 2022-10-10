@@ -5,6 +5,7 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -22,6 +23,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -181,17 +183,20 @@ fun SpecialTab(list: List<SpecialWebtoonItem>, viewModel: HomeTabViewModel) {
         items(
             items = list
         ) {
-            SpecialItem(it)
+            SpecialItem(it, listState)
             Spacer(modifier = Modifier.height(10.dp))
         }
     }
-    listState.OnBottomReached(buffer = 2) {
+    listState.OnBottomReached() {
         viewModel.loadMoreSpecialWebtoon()
+    }
+    listState.OnTopReached {
+        viewModel.loadMoreSpecialWebtoonTop()
     }
 }
 
 @Composable
-fun SpecialItem(item: SpecialWebtoonItem) {
+fun SpecialItem(item: SpecialWebtoonItem, listState: LazyListState) {
     val context = LocalContext.current
     val imgLoader = ImageLoader.Builder(context)
         .components {
@@ -205,55 +210,74 @@ fun SpecialItem(item: SpecialWebtoonItem) {
     val mPainter = rememberAsyncImagePainter(R.drawable.fight, imgLoader)
 
 
-    ConstraintLayout(modifier = Modifier.height(600.dp)) {
-        val (frontImage, backgroundImage, chips) = createRefs()
+    Box(modifier = Modifier.height(600.dp)
+        .clip(RoundedCornerShape(0.dp))) {
         Image(
             painter = mPainter,
             contentDescription = "Webtoon",
+
             modifier = Modifier
                 .zIndex(2.0f)
                 .fillMaxWidth()
-                .constrainAs(frontImage) {
-                    bottom.linkTo(backgroundImage.bottom)
-                },
+                .align(Alignment.BottomCenter)
+                ,
             contentScale = ContentScale.Crop
         )
         Image(
             painterResource(id = R.drawable.back),
             contentDescription = "background",
             modifier = Modifier
-                .constrainAs(backgroundImage) {
-                    top.linkTo(parent.top)
-                }
                 .fillMaxWidth()
-                .height(600.dp),
+                .offset( y= with(LocalDensity.current) {
+                    (listState.layoutInfo.visibleItemsInfo.firstOrNull()?.offset?.div(5))?.toDp()  ?: 0.dp
+                }),
             contentScale = ContentScale.Crop
         )
         ChipButtons(modifier = Modifier
-            .constrainAs(chips) {
-                bottom.linkTo(parent.bottom)
-            }
             .padding(bottom = 16.dp, start = 4.dp)
-            .zIndex(3.0f), data = chipString)
+            .zIndex(3.0f)
+            .align(Alignment.BottomCenter),
+            data = chipString)
+
     }
 
 
 }
 
-val chipString = listOf("123", "3452345", "12312321", "124123123", "123123123", "123123123")
+val chipString = listOf("꿀잼", "꿀맛", "개굴맨", "팡주팡머", "팡팡팡", "팡팡팡팡","꿀잼", "꿀맛", "개굴맨", "팡주팡머", "팡팡팡", "팡팡팡팡","꿀잼", "꿀맛", "개굴맨", "팡주팡머", "팡팡팡", "팡팡팡팡","꿀잼", "꿀맛", "개굴맨", "팡주팡머", "팡팡팡", "팡팡팡팡")
 
 @Composable
 fun ChipButtons(modifier: Modifier, data: List<String>) {
     val infiniteTransition = rememberInfiniteTransition()
-    val color by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 6f,
+    val scrollPosition by infiniteTransition.animateValue(
+        initialValue = 0,
+        targetValue = data.size,
+        typeConverter = Int.VectorConverter,
         animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = LinearEasing),
+            animation = tween(2000, easing = LinearEasing),
             repeatMode = RepeatMode.Reverse
         )
     )
-    val chipState = rememberLazyListState()
+    val chipState = rememberLazyListState(scrollPosition)
+    val c by remember(scrollPosition) {
+        derivedStateOf {
+            when (scrollPosition) {
+                0 -> {
+                    data.size - 1
+                }
+                data.size - 1 -> {
+                    0
+                }
+                else -> {
+                    80
+                }
+            }
+        }
+    }
+    LaunchedEffect(c) {
+        println(chipState.layoutInfo.viewportEndOffset)
+        if(c != 80) chipState.animateScrollToItem(c)
+    }
     LazyRow(state = chipState, modifier = modifier) {
         items(data.size) {
             Text(
@@ -262,25 +286,41 @@ fun ChipButtons(modifier: Modifier, data: List<String>) {
                     .background(Color.Black)
                     .padding(vertical = 4.dp, horizontal = 8.dp),
                 color = Color.White
-
             )
             Spacer(modifier = Modifier.width(2.dp))
         }
     }
+
 }
 
 @Composable
 fun LazyListState.OnBottomReached(
-    buffer: Int = 0,
     loadMore: () -> Unit
 ) {
-    require(buffer >= 0) { "buffer cannot be negative, but was $buffer" }
-
     val shouldLoadMore = remember {
         derivedStateOf {
             val lastVisibleItem = layoutInfo.visibleItemsInfo.lastOrNull()
-
             lastVisibleItem!!.index == layoutInfo.totalItemsCount - 1
+        }
+    }
+
+    LaunchedEffect(shouldLoadMore) {
+        snapshotFlow { shouldLoadMore.value }
+            .collect {
+                if (it) loadMore()
+            }
+    }
+}
+
+@Composable
+fun LazyListState.OnTopReached(
+    loadMore: () -> Unit
+) {
+    val shouldLoadMore = remember {
+        derivedStateOf {
+            val lastVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull()
+
+            lastVisibleItem!!.index == 0
         }
     }
 

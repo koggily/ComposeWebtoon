@@ -60,6 +60,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+        Integer.lowestOneBit(8)
     }
 }
 
